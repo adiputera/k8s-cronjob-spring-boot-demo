@@ -63,3 +63,15 @@ Manually trigger a job immediately (bypassing the cron schedule):
 ```bash
 microk8s kubectl create job --from=cronjob/cronjob-10s manual-test-job
 ```
+
+## Cleanup
+
+To stop the jobs from triggering every minute, delete the CronJobs from your cluster:
+```bash
+microk8s kubectl delete -f k8s/cronjobs.yaml
+```
+
+To clean up the leftover "Completed" pods:
+```bash
+microk8s kubectl delete pods --field-selector=status.phase=Succeeded
+```
