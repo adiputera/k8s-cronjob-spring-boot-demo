@@ -1,0 +1,65 @@
+# Kubernetes CronJob Demo using Spring Boot
+
+This project is a Proof of Concept (POC) demonstrating how to run a single Spring Boot application as multiple distinct Kubernetes CronJobs.
+
+## Architecture
+
+Instead of building separate applications/Docker images for different jobs, this project builds exactly **1 Docker image**. The Kubernetes manifests define 3 different CronJobs that reuse this single image:
+- `cronjob-10s`: Delays for 10 seconds, then triggers job 1
+- `cronjob-30s`: Delays for 30 seconds, then triggers job 2
+- `cronjob-50s`: Delays for 50 seconds, then triggers job 3
+
+This is achieved by passing arguments to the Spring Boot application (e.g., `job-10s`) which are then parsed by a `CommandLineRunner`.
+
+The application is configured as a non-web application (`spring.main.web-application-type=none`), meaning it will boot up, execute the requested logic, and immediately shut down. Kubernetes handles the scheduling and cleanup.
+
+## Prerequisites
+
+- **Java 25**
+- **Maven**
+- **Docker**
+- **MicroK8s** (or another Kubernetes distribution)
+
+## Local Development & Build
+
+1. Build the Spring Boot application using Maven:
+   ```bash
+   mvn clean package
+   ```
+
+3. Build the Docker image:
+   ```bash
+   docker build -t k8scron-demo:latest .
+   ```
+
+## Deployment to MicroK8s
+
+1. Save the Docker image and import it into MicroK8s containerd:
+   ```bash
+   docker save k8scron-demo:latest | microk8s ctr image import -
+   ```
+   *(Note: Ensure your user is in the `microk8s` group, or use `sudo` if necessary)*
+
+2. Apply the Kubernetes CronJob manifests:
+   ```bash
+   microk8s kubectl apply -f k8s/cronjobs.yaml
+   ```
+
+## Monitoring
+
+The CronJobs are scheduled to run every minute (`* * * * *`).
+
+Watch the pods spin up:
+```bash
+microk8s kubectl get pods -w
+```
+
+Check the logs of a completed pod to see the Spring Boot output:
+```bash
+microk8s kubectl logs <pod-name>
+```
+
+Manually trigger a job immediately (bypassing the cron schedule):
+```bash
+microk8s kubectl create job --from=cronjob/cronjob-10s manual-test-job
+```
