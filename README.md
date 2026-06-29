@@ -27,7 +27,7 @@ The application is configured as a non-web application (`spring.main.web-applica
    mvn clean package
    ```
 
-3. Build the Docker image:
+2. Build the Docker image:
    ```bash
    docker build -t k8scron-demo:latest .
    ```
