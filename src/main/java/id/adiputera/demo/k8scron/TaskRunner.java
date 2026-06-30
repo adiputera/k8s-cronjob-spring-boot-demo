@@ -3,8 +3,17 @@ package id.adiputera.demo.k8scron;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+/**
+ * @author Yusuf F. Adiputera
+ */
 @Component
 public class TaskRunner implements CommandLineRunner {
+
+    private final JobRegistry jobRegistry;
+
+    public TaskRunner(JobRegistry jobRegistry) {
+        this.jobRegistry = jobRegistry;
+    }
 
     @Override
     public void run(String... args) throws Exception {
@@ -17,19 +26,14 @@ public class TaskRunner implements CommandLineRunner {
         System.out.println("Starting execution for: " + jobName);
 
         try {
-            switch (jobName) {
-                case "job-10s":
-                    System.out.println("[JOB-10S] Executing business logic for 10s delay job...");
-                    break;
-                case "job-30s":
-                    System.out.println("[JOB-30S] Executing business logic for 30s delay job...");
-                    break;
-                case "job-50s":
-                    System.out.println("[JOB-50S] Executing business logic for 50s delay job...");
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown job '" + jobName + "'!");
-            }
+            JobPerformable job = jobRegistry.getJob(jobName)
+                    .orElseThrow(() -> new IllegalArgumentException("Unknown job '" + jobName + "'!"));
+
+            // Extract the rest of the arguments to pass to the job
+            String[] jobArgs = new String[args.length - 1];
+            System.arraycopy(args, 1, jobArgs, 0, jobArgs.length);
+
+            job.perform(jobArgs);
 
             System.out.println("Job " + jobName + " completed successfully!");
             // Application will terminate naturally with exit code 0
@@ -40,3 +44,4 @@ public class TaskRunner implements CommandLineRunner {
         }
     }
 }
+
