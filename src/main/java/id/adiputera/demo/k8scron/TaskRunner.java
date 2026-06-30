@@ -18,8 +18,7 @@ public class TaskRunner implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         if (args.length == 0) {
-            System.err.println("Error: No job name provided as argument!");
-            System.exit(1);
+            throw new IllegalArgumentException("Error: No job name provided as argument!");
         }
 
         String jobName = args[0];
