@@ -9,9 +9,18 @@ Instead of building separate applications/Docker images for different jobs, this
 - `cronjob-30s`: Delays for 30 seconds, then triggers job 2
 - `cronjob-50s`: Delays for 50 seconds, then triggers job 3
 
-This is achieved by passing arguments to the Spring Boot application (e.g., `job-10s`) which are then parsed by a `CommandLineRunner`.
+This is achieved by passing arguments to the Spring Boot application (e.g., `job-10s`) which are then processed dynamically by a **Dynamic Job Registry** system.
 
 The application is configured as a non-web application (`spring.main.web-application-type=none`), meaning it will boot up, execute the requested logic, and immediately shut down. Kubernetes handles the scheduling and cleanup.
+
+### Dynamic Job Registry
+
+Jobs are loaded dynamically using Spring's bean discovery mechanism:
+1. **`JobPerformable` interface**: Every job class must implement this interface and override `perform(String... args)`.
+2. **`@RegistryKey` annotation**: Annotated on the job class with the matching Kubernetes parameter key (e.g., `@RegistryKey(key = "job-10s")`).
+3. **`JobRegistry` component**: Automatically scans all `JobPerformable` beans, parses their `@RegistryKey` annotation on initialization, and indexes them in a map.
+4. **`TaskRunner` component**: A `CommandLineRunner` that acts as the entrypoint. It receives the job key as the first command-line argument, looks up the corresponding job from the `JobRegistry`, and runs it. Any subsequent command-line arguments are passed along to the job.
+
 
 ## Prerequisites
 
